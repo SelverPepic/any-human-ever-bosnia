@@ -1,0 +1,48 @@
+{
+  "id": "any-human-ever-bosnia",
+  "name": "Any Human Ever - in medieval Bosnia",
+  "version": "0.1.0",
+  "description": "Draw one random life from medieval Bosnia, 600-1463: a birth year, a place, an occupation and religion, the ruler and noble house over it, and the wars, plagues, treaties and schisms that touched it.",
+  "icon": "icon.png",
+  "offline_capable": true,
+  "permissions": {},
+  "source_files": [
+    "index.html",
+    "style.css",
+    "images.js",
+    "world.js",
+    "app.js"
+  ],
+  "store": {
+    "tagline": "One medieval Bosnian life, drawn at random.",
+    "description": "From the Slavic settlement to the fall of the Kingdom of Bosnia. Draw a birth year, a place, a life \u2014 then read the story: who ruled, which house held the land, what wars and plagues reached it. Seeded, shareable, and grounded in real history.",
+    "screenshots": [
+      {
+        "src": "static/store/shot-hero.png",
+        "alt": "Any Human Ever - in medieval Bosnia hero screen with the Draw a random life button",
+        "label": "Choose one medieval Bosnian life"
+      },
+      {
+        "src": "static/store/shot-when.png",
+        "alt": "Population curve of medieval Bosnia with a drawn birth year",
+        "label": "Draw a birth year"
+      },
+      {
+        "src": "static/store/shot-map.png",
+        "alt": "Clickable map of medieval Bosnia with regions and towns",
+        "label": "Pick a place on the map"
+      },
+      {
+        "src": "static/store/shot-life.png",
+        "alt": "Life summary statistics and a generated life with rulers over the lifetime",
+        "label": "A life, in numbers and reigns"
+      },
+      {
+        "src": "static/store/shot-story.png",
+        "alt": "Generated life story with sources and an everyday-life photo of stecci tombstones",
+        "label": "Read the sourced story"
+      }
+    ]
+  },
+  "entry": "index.jsx"
+}
