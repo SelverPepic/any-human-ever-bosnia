@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobius-theme" content="inherit">
+<title>Any Human Ever - in medieval Bosnia</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">ANY&nbsp;HUMAN&nbsp;EVER&nbsp;&ndash;&nbsp;IN&nbsp;MEDIEVAL&nbsp;BOSNIA</a>
+  <nav><a class="brand" href="#" onclick="showAbout();return false;">ABOUT</a></nav>
+</header>
+
+<main id="app">
+  <ol id="progress" hidden>
+    <li data-stage="when"><button type="button" class="step"><span class="lbl">When</span></button></li>
+    <li data-stage="where"><button type="button" class="step"><span class="lbl">Where</span></button></li>
+    <li data-stage="life"><button type="button" class="step"><span class="lbl">Life</span></button></li>
+    <li data-stage="story"><button type="button" class="step"><span class="lbl">Story</span></button></li>
+  </ol>
+
+  <section id="hero" class="stage">
+    <p class="odds">From the Slavic settlement to the fall of the Kingdom of Bosnia — nearly nine hundred years.</p>
+    <h1>Choose one.</h1>
+    <button id="draw" class="primary">Draw a random life</button>
+    <p class="subtle">You'll draw, step by step: a year, a place, a life, each <strong>taken at random</strong> from what survives of medieval Bosnia.</p>
+  </section>
+
+  <section id="stage-when" class="stage" hidden>
+    <h2>When were they born?</h2>
+    <p class="stage-hint">Bosnia's population grew slowly through the medieval period; the dip is the great plague of 1349–1351.</p>
+    <div class="panel">
+      <svg id="pop-graph" viewBox="0 0 360 150" preserveAspectRatio="none"></svg>
+      <div class="graph-axis-unit">years · population, log scale (estimate)</div>
+    </div>
+    <div id="when-result" class="reveal-value">&nbsp;</div>
+    <p id="when-sub" class="reveal-sub"></p>
+    <p id="when-src" class="src-note"></p>
+    <div class="stage-actions">
+      <button id="when-select" class="primary">Draw a birth year</button>
+      <button id="when-again" class="again-btn" hidden>↻ Redraw year</button>
+      <button id="when-next" class="ghost-next" hidden>Continue →</button>
+    </div>
+  </section>
+
+  <section id="stage-where" class="stage" hidden>
+    <h2>Where in Bosnia?</h2>
+    <p class="stage-hint" id="where-hint">Click anywhere on the map to choose a place — it snaps to the nearest one with data — or redraw at random.</p>
+    <div class="panel map">
+      <svg id="map-svg" viewBox="0 0 400 300"></svg>
+    </div>
+    <div id="where-result" class="reveal-value">&nbsp;</div>
+    <p id="where-sub" class="reveal-sub"></p>
+    <p id="where-src" class="src-note"></p>
+    <div class="stage-actions">
+      <button id="where-select" class="primary">Draw a place</button>
+      <button id="where-again" class="again-btn" hidden>↻ Redraw place</button>
+      <button id="where-next" class="ghost-next" hidden>Continue →</button>
+    </div>
+  </section>
+
+  <section id="stage-life" class="stage" hidden>
+    <h2>A life then and there</h2>
+    <p class="stage-hint">Medieval Bosnian life, in numbers. All figures are model-based estimates.</p>
+    <div id="demo-stats" class="stats"></div>
+    <p id="life-src" class="src-note"></p>
+    <div class="panel">
+      <label class="noble-row"><input type="checkbox" id="noble-only"> Sample only from the nobility (vlastela &amp; vlasteličići)</label>
+      <button id="generate" class="primary">Generate life</button>
+      <button id="life-again" class="again-btn" hidden>↻ Regenerate life</button>
+    </div>
+    <div id="life-card" hidden>
+      <h3 id="life-title" class="reveal-value"></h3>
+      <div id="life-stats" class="stats"></div>
+      <div class="timeline"><svg id="tl-svg" viewBox="0 0 360 84"></svg></div>
+      <p id="life-hint" class="stage-hint"></p>
+      <div class="stage-actions">
+        <button id="life-next" class="ghost-next" hidden>Read their story →</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="stage-story" class="stage" hidden>
+    <h2 id="life-name"></h2>
+    <p id="stats-label" class="disclaimer"></p>
+    <p id="life-story" class="story"></p>
+    <div id="life-stats2" class="stats"></div>
+    <div class="actions">
+      <button id="share" class="again-btn">⧉ Share this life</button>
+      <button id="again" class="primary">Draw another life</button>
+      <span id="share-url" class="share-url" hidden></span>
+    </div>
+  </section>
+
+  <section id="about" class="stage" hidden>
+    <h2>About</h2>
+    <div id="about-body"></div>
+    <button class="again-btn" onclick="hideAbout()">Back</button>
+  </section>
+</main>
+
+<script src="images.js"></script>
+<script src="world.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
