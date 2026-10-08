@@ -299,7 +299,7 @@ function renderWhere() {
     const place = weighted(choices, p => p.major ? 3 : 1);
     selectPlace(place);
   }));
-  el('where-src').innerHTML = 'Terrain base: <a href="https://commons.wikimedia.org/wiki/File:Bosnia_and_Herzegovina_relief_location_map.svg" target="_blank" rel="noopener noreferrer">Wikimedia Commons relief map</a> (DzWiki & NordNordWest, CC BY-SA 3.0). Historical place and region context: <a href="https://press.umich.edu/Books/T/The-Late-Medieval-Balkans" target="_blank" rel="noopener noreferrer">Fine, The Late Medieval Balkans</a> and <a href="https://nyupress.org/9780814755617/bosnia/" target="_blank" rel="noopener noreferrer">Malcolm, Bosnia: A Short History</a>. Settlement coordinates are approximate modern locations; historical region boundaries and labels are schematic.';
+  el('where-src').innerHTML = 'Terrain base: <a href="https://commons.wikimedia.org/wiki/File:Bosnia_and_Herzegovina_relief_location_map.svg" target="_blank" rel="noopener noreferrer">Wikimedia Commons relief map</a> (DzWiki & NordNordWest, CC BY-SA 3.0; not AI-generated). Historical place and region context: <a href="https://press.umich.edu/Books/T/The-Late-Medieval-Balkans" target="_blank" rel="noopener noreferrer">Fine, The Late Medieval Balkans</a> and <a href="https://nyupress.org/9780814755617/bosnia/" target="_blank" rel="noopener noreferrer">Malcolm, Bosnia: A Short History</a>. Settlement coordinates are approximate modern locations; historical region boundaries and labels are schematic.';
 }
 
 /* ---------- demographics summary (estimated from the life model) ---------- */
