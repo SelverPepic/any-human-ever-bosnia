@@ -2,7 +2,7 @@
   "id": "any-human-ever-bosnia",
   "name": "Any Human Ever - in medieval Bosnia",
   "version": "0.1.0",
-  "description": "Draw one random life from medieval Bosnia, 600-1463: a birth year, a place, an occupation and religion, the ruler and noble house over it, and the wars, plagues, treaties and schisms that touched it.",
+  "description": "Draw a fictional life born in Bosnia from c. 600 through the Ottoman conquest of Jajce in 1527, with a selectable birth year, modern terrain map, period-varying demographic assumptions, and sourced historical context. Lifetimes may continue beyond the birth-year range.",
   "icon": "icon.png",
   "offline_capable": true,
   "permissions": {},

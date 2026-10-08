@@ -131,3 +131,18 @@ svg { display: block; width: 100%; height: 190px; }
 .map-selected { fill: var(--accent); stroke: #fff; stroke-width: 1.5; }
 .place-label.sel { font-size: 11px; fill: var(--text); font-weight: 700; }
 .map-region { fill: rgba(139,108,247,0.06); stroke: rgba(139,108,247,0.35); }
+.name-toggle { display: flex; gap: 8px; margin: 10px 0 4px; }
+.toggle-btn { font-size: 12px; padding: 6px 12px; border-radius: 999px; }
+.toggle-btn.is-on { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.map-image-note { color: var(--muted); font-size: 11px; }
+.map svg { height: 430px; }
+.year-picker { display: grid; gap: 9px; margin: 12px 2px; font-size: 13px; color: var(--text); }
+.year-picker output { color: var(--accent); font-family: var(--mono); font-weight: 700; }
+.year-picker input[type="range"] { width: 100%; accent-color: var(--accent); }
+.year-entry { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.year-entry input { width: 112px; min-height: 42px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+.year-entry button { min-height: 42px; }
+.region-choices { display: flex; gap: 7px; flex-wrap: wrap; margin: 10px 0; }
+.region-choices button { min-height: 40px; }
+.city-label { font-size: 8px; fill: var(--text); stroke: var(--bg); stroke-width: 2px; paint-order: stroke; font-family: var(--mono); pointer-events: none; }
+.map svg .place-dot:focus { stroke: #fff; stroke-width: 2px; }

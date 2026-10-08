@@ -22,7 +22,7 @@
   </ol>
 
   <section id="hero" class="stage">
-    <p class="odds">From the Slavic settlement to the fall of the Kingdom of Bosnia — nearly nine hundred years.</p>
+    <p class="odds">From early Slavic settlements to the Ottoman conquest of Jajce in 1527, the last major frontier holdout (c. 600–1527).</p>
     <h1>Choose one.</h1>
     <button id="draw" class="primary">Draw a random life</button>
     <p class="subtle">You'll draw, step by step: a year, a place, a life, each <strong>taken at random</strong> from what survives of medieval Bosnia.</p>
@@ -30,10 +30,15 @@
 
   <section id="stage-when" class="stage" hidden>
     <h2>When were they born?</h2>
-    <p class="stage-hint">Bosnia's population grew slowly through the medieval period; the dip is the great plague of 1349–1351.</p>
+    <p class="stage-hint">Estimated population by birth year. Choose a year with the graph, slider, or number field; the vertical scale starts at zero. The plague dip is modeled around 1349–1351.</p>
     <div class="panel">
-      <svg id="pop-graph" viewBox="0 0 360 150" preserveAspectRatio="none"></svg>
-      <div class="graph-axis-unit">years · population, log scale (estimate)</div>
+      <svg id="pop-graph" viewBox="0 0 400 180" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="year-picker" aria-label="Choose a specific birth year">
+      <label for="year-range">Birth year: <output id="year-output">—</output></label>
+      <input id="year-range" type="range" min="600" max="1527" step="1" value="600" aria-label="Birth year slider">
+      <div class="year-entry"><label for="year-number">Or enter a year</label><input id="year-number" type="number" min="600" max="1527" step="1" value="600"><button id="use-year" type="button" class="primary">Use this year</button></div>
+      <p class="src-note">Births may be sampled through 1527; a person's estimated lifetime can continue beyond it.</p>
     </div>
     <div id="when-result" class="reveal-value">&nbsp;</div>
     <p id="when-sub" class="reveal-sub"></p>
@@ -47,7 +52,12 @@
 
   <section id="stage-where" class="stage" hidden>
     <h2>Where in Bosnia?</h2>
-    <p class="stage-hint" id="where-hint">Click anywhere on the map to choose a place — it snaps to the nearest one with data — or redraw at random.</p>
+    <p class="stage-hint" id="where-hint">Click a dot to choose a settlement, or click anywhere to snap to the nearest one. Toggle medieval or modern names.</p>
+    <div class="name-toggle">
+      <button type="button" id="toggle-medieval" class="toggle-btn is-on">Medieval names</button>
+      <button type="button" id="toggle-modern" class="toggle-btn">Modern names</button>
+    </div>
+    <div id="region-choices" class="region-choices" aria-label="Choose a medieval region"></div>
     <div class="panel map">
       <svg id="map-svg" viewBox="0 0 400 300"></svg>
     </div>
