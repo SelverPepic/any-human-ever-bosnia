@@ -426,6 +426,7 @@ const SOURCES = [
   { key: 'jajce-unesco', label: 'UNESCO, Natural and architectural ensemble of Jajce (Jajce Banate, 1464–1527)', url: 'https://whc.unesco.org/en/tentativelists/2098/' },
   { key: 'museum-ring', label: 'Museum of the Bosnian Kingdom, golden signet ring of Tripa Buća (Archaeological Museum Zagreb, Medieval Department)', url: 'https://muzejbosanskogkraljevstva.ba/en/zlatni-pecatni-prsten-tripe-buce-2/' },
   { key: 'hval-manuscript', label: 'Hval’s illustrated manuscript, 1404 (Wikimedia Commons; public-domain reproduction)', url: 'https://commons.wikimedia.org/wiki/File:Hvalov_zbornik1.jpg' },
+  { key: 'hval-context', label: 'Museum of the Bosnian Kingdom, Hvalov Zbornik (1404), Bosnian Church manuscript', url: 'https://muzejbosanskogkraljevstva.ba/en/hvalov-zbornik-2/' },
   { key: 'kotromanic-arms', label: 'Kotromanić coat-of-arms image from a later armorial tradition (Wikimedia Commons, CC BY-SA 4.0)', url: 'https://commons.wikimedia.org/wiki/File:Kotromanic_Coat_of_Arms.jpg' },
   { key: 'sword-object', label: 'Bosnian medieval sword on display at Museum Semberija (Wikimedia Commons, CC BY-SA 4.0)', url: 'https://commons.wikimedia.org/wiki/File:Bosnian_medieval_sword.jpg' },
   { key: 'doboj-find', label: 'Doboj Museum medieval collection: stećak with damaged Cyrillic inscription (Wikimedia Commons, CC BY-SA 4.0)', url: 'https://commons.wikimedia.org/wiki/File:Muzej_u_Doboju,_ADj,_2022_(12).jpg' },

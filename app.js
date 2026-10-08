@@ -260,9 +260,9 @@ function markSelectedOnMap(W, H) {
   label.setAttribute('visibility', 'visible');
 }
 function selectPlace(place) {
-  drawPopMap();
   drawn.place = place;
   drawn.region = place.region;
+  drawPopMap();
   const region = REGIONS.find(r => r.id === place.region);
   el('where-result').textContent = `${placeName(place)}${NAME_MODE === 'medieval' && place.medieval && place.medieval !== place.name ? ` (today ${place.name})` : ''} — ${region.name}`;
   const kind = place.kind === 'fortress' ? 'a fortress town' : place.kind === 'mining' ? 'a mining town'
@@ -454,7 +454,7 @@ function drawLife() {
   const deathYear = year + lifespan;
   const householdChildren = lifespan >= 16
     ? Math.max(0, Math.min(10, Math.round(lifeProfile(year).births + (rand() - .5) * 4))) : 0;
-  const place = drawn.place || { name: settlementName(region, 'town'), kind: 'town' };
+  const place = drawn.place || weighted(PLACES.filter(p => p.region === region.id), p => p.major ? 3 : 1);
   const typeLabel = place.kind === 'fortress' ? 'a fortress town' : place.kind === 'mining' ? 'a mining town'
     : place.kind === 'monastery' ? 'a monastery village' : place.kind === 'market' ? 'a market town'
     : place.kind === 'town' ? 'a town' : 'a village';
@@ -695,8 +695,9 @@ function lifeStory(life) {
   pieces.push('<h3>People, objects and symbols in the historical record</h3>');
   pieces.push('<p>No surviving portrait is identified as this randomly generated person. The following are reference images of real period sources or objects, not possessions of the fictional character; every image is individually credited and marked as not AI-generated.</p>');
   if (p.deathYear >= 1404) {
-    pieces.push(imgFigure('manuscript', 'A human figure in Hval’s illustrated Bosnian manuscript (1404): a source-era visual, not a portrait of this person or a universal costume reference.', 'Hval manuscript, written for Duke Hrvoje Vukčić Hrvatinić'));
+    pieces.push(imgFigure('manuscript', 'Religious imagery in Hval’s 1404 Bosnian Church manuscript, with a human figure: a source-era reference, not a portrait or universal costume reference.', 'Hval manuscript, written for Duke Hrvoje Vukčić Hrvatinić'));
     ACTIVE_SOURCES.add('hval-manuscript');
+    ACTIVE_SOURCES.add('hval-context');
   }
   if ((p.occ.id === 'vojnik' || p.occ.noble) && p.year >= 1200) {
     pieces.push(imgFigure('sword', 'A medieval Bosnian sword displayed at Museum Semberija. It is a representative weapon reference, not an item attributed to this person.', 'Wikimedia Commons, CC BY-SA 4.0'));
