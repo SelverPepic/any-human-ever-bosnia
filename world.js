@@ -1,4 +1,4 @@
-/* world.js — medieval Bosnia, 600-1463: population, regions, settlements,
+/* world.js — Bosnia, c. 600-1527: population, regions, settlements,
    occupations, religions, rulers, noble houses and events. */
 
 // Rough Bosnian population estimates. Not a census: the shape (steady growth
@@ -8,6 +8,9 @@ const POPULATION = [
   [600, 20000], [700, 45000], [800, 90000], [900, 150000], [1000, 230000],
   [1100, 300000], [1200, 380000], [1300, 480000], [1340, 560000],
   [1355, 390000], [1400, 480000], [1440, 560000], [1463, 470000],
+  // Post-conquest population series are especially uncertain. This endpoint
+  // is a broad model estimate, not a census, and only weights birth sampling.
+  [1527, 430000],
 ];
 
 const REGIONS = [
@@ -173,6 +176,7 @@ const RULERS = [
   { from: 1420, to: 1443, name: 'King Tvrtko II, restored', title: 'King of Bosnia', note: 'Tvrtko II again, the longest and most cultured reign of the last Bosnian kings' },
   { from: 1443, to: 1461, name: 'King Stjepan Tomaš', title: 'King of Bosnia', note: 'Tomaš, the last capable king, who married Katarina Kosača and pressed the krstjani to convert' },
   { from: 1461, to: 1463, name: 'King Stjepan Tomašević', title: 'King of Bosnia', note: 'Tomašević, the last Bosnian king, whose kingdom fell in nineteen days' },
+  { from: 1463, to: 1527, name: 'Ottoman expansion; Jajce frontier', title: 'Ottoman rule and the Jajce Banate', note: 'most of the medieval Bosnian kingdom was conquered in 1463, while Jajce remained a Hungarian-held frontier stronghold until 1527' },
 ];
 
 // Historical events that touch Bosnian lives. `regions` is a region id or
@@ -327,11 +331,10 @@ const QUIRKS = [
   'remembered for the tallest haystack anyone had seen',
 ];
 
-// How this life ended. Keyed by class and era; the plague and the conquest
-// years are their own windows.
+// How this fictional life ended. The causes below are narrative assumptions,
+// not documented medical causes for any generated person.
 const DEATHS = {
   plague: 'The plague of 1349 took them, as it took a third of the neighbourhood.',
-  conquest: 'The Ottoman conquest reached them in 1463, and their world ended with the kingdom.',
   war: 'They died in the fighting, as a great many in their family had.',
   childbirth: 'They died in childbirth, in the way so many women of that time did.',
   illness: 'They died of an illness that a modern village doctor would have treated in a week.',
@@ -342,7 +345,6 @@ const DEATHS = {
 function deathCause(life) {
   const d = life.deathYear, b = life.year;
   if (life.lifespan < 6) return DEATHS.infant;
-  if (d >= 1463) return DEATHS.conquest;
   if (d >= 1349 && d <= 1351) return DEATHS.plague;
   if (life.occ.id === 'vojnik' && d >= 1388 && d <= 1463) return DEATHS.war;
   if (life.sex === 'female' && life.lifespan >= 16 && life.lifespan <= 42) return DEATHS.childbirth;
@@ -410,16 +412,24 @@ addPlace('hum', 'Dabar', 240, 240, 'village');
 // carries a source key and, where the record is thin, an `estimate` flag so
 // the app can say plainly that it is a reconstruction.
 const SOURCES = [
-  { key: 'fine', label: 'Fine, The Late Medieval Balkans' },
-  { key: 'fine-early', label: 'Fine, The Early Medieval Balkans' },
-  { key: 'malcolm', label: 'Malcolm, Bosnia: A Short History' },
-  { key: 'cirkovic', label: 'Ćirković, The Double Wreath' },
-  { key: 'church', label: 'Fine, The Bosnian Church' },
-  { key: 'dai', label: 'Constantine VII, De Administrando Imperio (primary)' },
-  { key: 'kulin', label: 'Charter of Ban Kulin, 1189 (primary)' },
-  { key: 'franciscans', label: 'Cholewicki, Franciscans in the Kingdom of Bosnia' },
-  { key: 'coins', label: 'Central Bank of BiH, medieval Bosnian coinage' },
-  { key: 'relations', label: 'Dautović, Filipović & Isailović, Medieval Bosnia and South-East European Relations' },
+  { key: 'fine', label: 'Fine, The Late Medieval Balkans', url: 'https://press.umich.edu/Books/T/The-Late-Medieval-Balkans' },
+  { key: 'fine-early', label: 'Fine, The Early Medieval Balkans', url: 'https://press.umich.edu/Books/T/The-Early-Medieval-Balkans' },
+  { key: 'malcolm', label: 'Malcolm, Bosnia: A Short History', url: 'https://nyupress.org/9780814755617/bosnia/' },
+  { key: 'cirkovic', label: 'Ćirković, “The Double Wreath: A Contribution to the History of Kingship in Bosnia,” Balcanica 45 (2014)', url: 'https://www.balkaninstitut.com/pdf/izdanja/balcanica/Balcanica%20XLV.pdf' },
+  { key: 'church', label: 'Fine, The Bosnian Church: A New Interpretation', url: 'https://archive.org/details/bosnianchurchnew0000fine' },
+  { key: 'dai', label: 'Constantine VII, De Administrando Imperio (primary)', url: 'https://archive.org/details/constantineporph00cons' },
+  { key: 'kulin', label: 'Charter of Ban Kulin, 1189 (primary)', url: 'https://zemaljskimuzej.ba/en/the-charter-of-bosnian-ban-kulin/' },
+  { key: 'franciscans', label: 'Cholewicki, The Role of the Franciscans in the Kingdom of Bosnia', url: 'https://ams.ceu.edu/2019/Cholewicki.pdf' },
+  { key: 'coins', label: 'Central Bank of Bosnia and Herzegovina, Money in the Territory of BiH', url: 'https://www.cbbh.ba/content/DownloadAttachment/?id=fb80f4dc-5eb9-489a-8d42-6612a2daf944&langTag=en' },
+  { key: 'relations', label: 'Dautović, Filipović & Isailović, Medieval Bosnia and South-East European Relations', url: 'https://www.godisnjak.anubih.ba/index.php/godisnjak/bs_Latn/article/view/146' },
+  { key: 'slavic-sites', label: 'Early Slavic settlements in Bosnia and Herzegovina (archaeological review)', url: 'https://zgodovinskicasopis.si/index.php/zc/en/article/view/1544' },
+  { key: 'jajce-unesco', label: 'UNESCO, Natural and architectural ensemble of Jajce (Jajce Banate, 1464–1527)', url: 'https://whc.unesco.org/en/tentativelists/2098/' },
+  { key: 'museum-ring', label: 'Museum of the Bosnian Kingdom, golden signet ring of Tripa Buća (Archaeological Museum Zagreb, Medieval Department)', url: 'https://muzejbosanskogkraljevstva.ba/en/zlatni-pecatni-prsten-tripe-buce-2/' },
+  { key: 'hval-manuscript', label: 'Hval’s illustrated manuscript, 1404 (Wikimedia Commons; public-domain reproduction)', url: 'https://commons.wikimedia.org/wiki/File:Hvalov_zbornik1.jpg' },
+  { key: 'hval-context', label: 'Museum of the Bosnian Kingdom, Hvalov Zbornik (1404), Bosnian Church manuscript', url: 'https://muzejbosanskogkraljevstva.ba/en/hvalov-zbornik-2/' },
+  { key: 'kotromanic-arms', label: 'Kotromanić coat-of-arms image from a later armorial tradition (Wikimedia Commons, CC BY-SA 4.0)', url: 'https://commons.wikimedia.org/wiki/File:Kotromanic_Coat_of_Arms.jpg' },
+  { key: 'sword-object', label: 'Bosnian medieval sword on display at Museum Semberija (Wikimedia Commons, CC BY-SA 4.0)', url: 'https://commons.wikimedia.org/wiki/File:Bosnian_medieval_sword.jpg' },
+  { key: 'doboj-find', label: 'Doboj Museum medieval collection: stećak with damaged Cyrillic inscription (Wikimedia Commons, CC BY-SA 4.0)', url: 'https://commons.wikimedia.org/wiki/File:Muzej_u_Doboju,_ADj,_2022_(12).jpg' },
 ];
 
 const CULTURE = {
@@ -469,3 +479,66 @@ const SITE_IMAGES = {
   rama: { img: 'blagaj', then: 'The Blagaj fort, near the Rama routes to the coast', now: 'The ruin still marks the road the mule trains took.' },
   stecci: { img: 'stecci', then: 'A necropolis of stećci — the carved stone tombs of the highlands', now: 'Radimlja is the best-known necropolis; the stones are still standing.' },
 };
+
+/* ---------- real-geography places (for the terrain map) ---------- */
+
+// Geographic bounds of the Wikimedia relief map (documented on the file page):
+// N 45.4°, S 42.4°, W 15.5°, E 19.9°, equirectangular with 140% N/S stretch.
+const MAP_BOUNDS = { top: 45.4, bottom: 42.4, left: 15.5, right: 19.9 };
+const MAP_STRETCH = 1.4;
+
+// Medieval and modern names for the same settlements, with real coordinates
+// and the medieval land (region) each belonged to.
+const PLACES = [
+  { name: 'Sarajevo', medieval: 'Vrhbosna', lat: 43.86, lon: 18.41, kind: 'town', region: 'vrhbosna', major: true },
+  { name: 'Visoko', medieval: 'Podvisoki', lat: 43.99, lon: 18.18, kind: 'market', region: 'vrhbosna', major: true },
+  { name: 'Mile', medieval: 'Mile', lat: 43.98, lon: 18.16, kind: 'monastery', region: 'vrhbosna' },
+  { name: 'Bobovac', medieval: 'Bobovac', lat: 44.13, lon: 18.21, kind: 'fortress', region: 'vrhbosna' },
+  { name: 'Fojnica', medieval: 'Fojnica', lat: 44.03, lon: 17.90, kind: 'mining', region: 'vrhbosna', major: true },
+  { name: 'Kreševo', medieval: 'Kreševo', lat: 44.05, lon: 17.87, kind: 'mining', region: 'vrhbosna' },
+  { name: 'Kiseljak', medieval: 'Kiseljak', lat: 43.91, lon: 17.93, kind: 'town', region: 'vrhbosna' },
+  { name: 'Vareš', medieval: 'Vareš', lat: 44.17, lon: 18.16, kind: 'mining', region: 'vrhbosna' },
+  { name: 'Olovo', medieval: 'Plumbum', lat: 44.13, lon: 18.58, kind: 'mining', region: 'vrhbosna' },
+  { name: 'Zenica', medieval: 'Bilino Polje', lat: 44.20, lon: 17.91, kind: 'market', region: 'vrhbosna', major: true },
+  { name: 'Travnik', medieval: 'Lašva', lat: 44.23, lon: 17.65, kind: 'town', region: 'vrhbosna', major: true },
+  { name: 'Banja Luka', medieval: 'Banja Luka', lat: 44.77, lon: 17.19, kind: 'town', region: 'donjikraji', major: true },
+  { name: 'Kotor Varoš', medieval: 'Kotor', lat: 44.61, lon: 17.60, kind: 'town', region: 'donjikraji' },
+  { name: 'Ključ', medieval: 'Ključ', lat: 44.46, lon: 16.62, kind: 'fortress', region: 'donjikraji', major: true },
+  { name: 'Livno', medieval: 'Livno', lat: 43.83, lon: 17.00, kind: 'town', region: 'krajina', major: true },
+  { name: 'Bihać', medieval: 'Bihać', lat: 44.82, lon: 15.87, kind: 'border town', region: 'krajina', major: true },
+  { name: 'Jajce', medieval: 'Jajce', lat: 44.34, lon: 17.27, kind: 'fortress', region: 'krajina', major: true },
+  { name: 'Tešanj', medieval: 'Tešanj', lat: 44.62, lon: 17.99, kind: 'fortress', region: 'usora' },
+  { name: 'Maglaj', medieval: 'Maglaj', lat: 44.52, lon: 17.94, kind: 'fortress', region: 'usora' },
+  { name: 'Vranduk', medieval: 'Vranduk', lat: 44.58, lon: 17.99, kind: 'fortress', region: 'usora' },
+  { name: 'Doboj', medieval: 'Doboj', lat: 44.72, lon: 18.09, kind: 'fortress', region: 'usora', major: true },
+  { name: 'Srebrenik', medieval: 'Srebrenik', lat: 44.66, lon: 18.65, kind: 'fortress', region: 'usora' },
+  { name: 'Gradačac', medieval: 'Gradačac', lat: 44.88, lon: 18.76, kind: 'town', region: 'usora' },
+  { name: 'Tuzla', medieval: 'Soli', lat: 44.54, lon: 18.67, kind: 'market', region: 'soli', major: true },
+  { name: 'Srebrenica', medieval: 'Srebrenica', lat: 44.10, lon: 19.30, kind: 'mining', region: 'soli', major: true },
+  { name: 'Zvornik', medieval: 'Zvornik', lat: 44.39, lon: 19.10, kind: 'fortress', region: 'soli', major: true },
+  { name: 'Višegrad', medieval: 'Višegrad', lat: 43.79, lon: 19.29, kind: 'town', region: 'podrinje', major: true },
+  { name: 'Goražde', medieval: 'Goražde', lat: 43.66, lon: 18.80, kind: 'town', region: 'podrinje' },
+  { name: 'Foča', medieval: 'Foča', lat: 43.51, lon: 18.78, kind: 'town', region: 'podrinje', major: true },
+  { name: 'Prozor', medieval: 'Prozor', lat: 43.82, lon: 17.47, kind: 'town', region: 'rama' },
+  { name: 'Uskoplje', medieval: 'Uskoplje', lat: 43.98, lon: 17.57, kind: 'town', region: 'rama' },
+  { name: 'Konjic', medieval: 'Konjic', lat: 43.65, lon: 17.96, kind: 'town', region: 'rama', major: true },
+  { name: 'Rama', medieval: 'Rama', lat: 43.79, lon: 17.42, kind: 'village', region: 'rama' },
+  { name: 'Mostar', medieval: 'Mostar', lat: 43.34, lon: 17.80, kind: 'town', region: 'hum', major: true },
+  { name: 'Blagaj', medieval: 'Blagaj', lat: 43.26, lon: 17.85, kind: 'fortress', region: 'hum', major: true },
+  { name: 'Počitelj', medieval: 'Počitelj', lat: 43.13, lon: 17.74, kind: 'fortress', region: 'hum' },
+  { name: 'Stolac', medieval: 'Stolac', lat: 43.08, lon: 17.96, kind: 'town', region: 'hum' },
+  { name: 'Trebinje', medieval: 'Trebinje', lat: 42.71, lon: 18.19, kind: 'town', region: 'hum', major: true },
+  { name: 'Neum', medieval: 'Neum', lat: 42.86, lon: 17.62, kind: 'village', region: 'hum' },
+];
+
+// Medieval land (region) centroids, for land labels on the map.
+const REGION_CENTROIDS = [
+  { id: 'usora', name: 'Usora', lat: 44.70, lon: 18.25 },
+  { id: 'soli', name: 'Soli', lat: 44.35, lon: 18.95 },
+  { id: 'donjikraji', name: 'Donji Kraji', lat: 44.65, lon: 17.35 },
+  { id: 'krajina', name: 'Krajina', lat: 44.30, lon: 16.75 },
+  { id: 'podrinje', name: 'Podrinje', lat: 43.70, lon: 19.15 },
+  { id: 'vrhbosna', name: 'Vrhbosna', lat: 44.05, lon: 18.45 },
+  { id: 'rama', name: 'Rama', lat: 43.85, lon: 17.35 },
+  { id: 'hum', name: 'Hum', lat: 43.15, lon: 17.95 },
+];

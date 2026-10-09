@@ -26,6 +26,7 @@ const weighted = (items, w) => {
 const $ = (s) => document.querySelector(s);
 const el = (id) => document.getElementById(id);
 const hash = (s) => { let h = 0; for (const c of s) { h = ((h << 5) - h + c.charCodeAt(0)) | 0; } return h >>> 0; };
+const YEAR_MIN = 600, YEAR_MAX = 1527;
 
 // He/she pronouns: rewrite the historical-voice texts (written with "they")
 // into the person's own pronouns, preserving capitalisation.
@@ -40,10 +41,13 @@ function pronounify(text, sex) {
   });
 }
 function srcTag(key, estimate) {
+  if (ACTIVE_SOURCES) ACTIVE_SOURCES.add(key);
   const s = SOURCES.find(x => x.key === key);
   const name = s ? s.label.split(',')[0] : 'unattributed';
-  return `<span class="src-chip">${name}${estimate ? ' · est.' : ''}</span>`;
+  const label = `${name}${estimate ? ' · est.' : ''}`;
+  return s?.url ? `<a class="src-chip" href="${s.url}" target="_blank" rel="noopener noreferrer">${label}</a>` : `<span class="src-chip">${label}</span>`;
 }
+let ACTIVE_SOURCES = null;
 
 /* ---------- stages ---------- */
 const STAGES = ['when', 'where', 'life', 'story'];
@@ -108,7 +112,7 @@ function popAt(year) {
 function drawYear() {
   const CUM = [];
   let cum = 0;
-  for (let y = 600; y <= 1463; y++) { cum += popAt(y); CUM.push([y, cum]); }
+  for (let y = YEAR_MIN; y <= YEAR_MAX; y++) { cum += popAt(y); CUM.push([y, cum]); }
   const target = rand() * cum;
   let lo = 0, hi = CUM.length - 1;
   while (lo < hi) { const mid = (lo + hi) >> 1; if (CUM[mid][1] < target) lo = mid + 1; else hi = mid; }
@@ -119,157 +123,219 @@ function drawPopGraph() {
   const svg = el('pop-graph');
   if (svg.dataset.drawn) return;
   svg.dataset.drawn = '1';
-  const W = 400, H = 170, LEFT = 56, RIGHT = 12, TOP = 14, BOT = 26;
-  const x = (y) => LEFT + (y - 600) / 863 * (W - LEFT - RIGHT);
-  const maxLog = Math.log10(560000), minLog = Math.log10(20000);
-  const yy = (p) => H - BOT - (Math.log10(p) - minLog) / (maxLog - minLog) * (H - TOP - BOT);
-  let d = `M ${x(600)} ${yy(popAt(600))}`;
-  for (let y = 600; y <= 1463; y += 5) d += ` L ${x(y)} ${yy(popAt(y))}`;
-  const area = d + ` L ${x(1463)} ${H - BOT} L ${x(600)} ${H - BOT} Z`;
-  // Y axis ticks with labelled population counts.
-  const ticks = [20000, 50000, 100000, 300000, 560000];
-  let axis = '';
-  for (const t of ticks) {
+  const W = 400, H = 180, LEFT = 58, RIGHT = 12, TOP = 16, BOT = 30;
+  const MAXP = 600000;
+  const x = (y) => LEFT + (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN) * (W - LEFT - RIGHT);
+  const yy = (p) => H - BOT - (p / MAXP) * (H - TOP - BOT);
+  let d = `M ${x(YEAR_MIN)} ${yy(popAt(YEAR_MIN))}`;
+  for (let y = YEAR_MIN; y <= YEAR_MAX; y += 5) d += ` L ${x(y)} ${yy(popAt(y))}`;
+  if ((YEAR_MAX - YEAR_MIN) % 5 !== 0) d += ` L ${x(YEAR_MAX)} ${yy(popAt(YEAR_MAX))}`;
+  const area = d + ` L ${x(YEAR_MAX)} ${H - BOT} L ${x(YEAR_MIN)} ${H - BOT} Z`;
+  let grid = '';
+  for (let t = 0; t <= MAXP; t += 100000) {
     const y = yy(t);
-    axis += `<line x1="${LEFT}" y1="${y}" x2="${W - RIGHT}" y2="${y}" stroke="var(--border)" stroke-dasharray="2 4"/>`
-      + `<text x="${LEFT - 6}" y="${y + 3}" text-anchor="end" class="axis-label">${t >= 1000 ? (t / 1000) + 'k' : t}</text>`;
+    grid += `<line x1="${LEFT}" y1="${y}" x2="${W - RIGHT}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`
+      + `<text x="${LEFT - 8}" y="${y + 3}" text-anchor="end" class="axis-label">${t === 0 ? '0' : (t / 1000) + 'k'}</text>`;
+  }
+  const xticks = [600, 800, 1000, 1200, 1400, 1527];
+  let xaxis = '';
+  for (const t of xticks) {
+    xaxis += `<line x1="${x(t)}" y1="${H - BOT}" x2="${x(t)}" y2="${H - BOT + 5}" stroke="var(--muted)"/>`
+      + `<text x="${x(t)}" y="${H - BOT + 18}" text-anchor="middle" class="axis-label">${t}</text>`;
   }
   svg.innerHTML = `
     <path d="${area}" fill="var(--accent-dim)"/>
     <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2"/>
-    ${axis}
-    <line x1="${LEFT}" y1="${TOP - 6}" x2="${LEFT}" y2="${H - BOT}" stroke="var(--muted)"/>
-    <text x="${LEFT}" y="${H - 6}" class="axis-label">600</text>
-    <text x="${x(1000)}" y="${H - 6}" class="axis-label">1000</text>
-    <text x="${x(1200)}" y="${H - 6}" class="axis-label">1200</text>
-    <text x="${W - RIGHT}" y="${H - 6}" text-anchor="end" class="axis-label">1463</text>
-    <text x="${LEFT - 40}" y="${(H - BOT + TOP) / 2}" class="axis-title" transform="rotate(-90 ${LEFT - 40} ${(H - BOT + TOP) / 2})" text-anchor="middle">Population (estimate)</text>`;
+    ${grid}
+    <line x1="${LEFT}" y1="${TOP - 8}" x2="${LEFT}" y2="${H - BOT}" stroke="var(--muted)" stroke-width="1.5"/>
+    <line x1="${LEFT}" y1="${H - BOT}" x2="${W - RIGHT}" y2="${H - BOT}" stroke="var(--muted)" stroke-width="1.5"/>
+    ${xaxis}
+    <text x="${LEFT - 44}" y="${(H - BOT + TOP) / 2}" class="axis-title" transform="rotate(-90 ${LEFT - 44} ${(H - BOT + TOP) / 2})" text-anchor="middle">Population (estimate)</text>
+    <text x="${(LEFT + W - RIGHT) / 2}" y="${H - 4}" text-anchor="middle" class="axis-title">Birth year</text>
+    <g id="year-marker" visibility="hidden" pointer-events="none"><line id="year-marker-line" y1="${TOP}" y2="${H - BOT}" stroke="var(--danger)" stroke-dasharray="3 3"/><circle id="year-marker-dot" cy="0" r="5" fill="var(--danger)"/></g>`;
+  svg.addEventListener('click', (e) => {
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const year = Math.round(YEAR_MIN + (loc.x - LEFT) / (W - LEFT - RIGHT) * (YEAR_MAX - YEAR_MIN));
+    if (year >= YEAR_MIN && year <= YEAR_MAX) setSelectedYear(year);
+  });
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Estimated population by birth year, 600 to 1527. Click the graph to select a year.');
+}
+function setSelectedYear(year) {
+  const value = Number(year);
+  if (!Number.isFinite(value)) return;
+  const y = Math.max(YEAR_MIN, Math.min(YEAR_MAX, Math.round(value)));
+  el('year-range').value = y; el('year-number').value = y; el('year-output').textContent = y;
+  const svg = el('pop-graph'), marker = el('year-marker');
+  const W = 400, H = 180, LEFT = 58, RIGHT = 12, TOP = 16, BOT = 30, MAXP = 600000;
+  const x = LEFT + (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN) * (W - LEFT - RIGHT);
+  const py = H - BOT - (popAt(y) / MAXP) * (H - TOP - BOT);
+  marker.setAttribute('visibility', 'visible');
+  el('year-marker-line').setAttribute('x1', x); el('year-marker-line').setAttribute('x2', x);
+  el('year-marker-dot').setAttribute('cx', x); el('year-marker-dot').setAttribute('cy', py);
 }
 
 function renderWhen() {
   drawPopGraph();
-  el('when-src').innerHTML = 'Population figures are rough estimates reconstructed from historical scholarship — not a census. See <a href="#" onclick="showAbout();return false;">About</a>.';
+  el('when-src').innerHTML = 'Population curve is an illustrative model, not a census series; figures after 1463 are especially uncertain. See <a href="#" onclick="showAbout();return false;">sources and method</a>.';
 }
 
-/* ---------- stage 2: where ---------- */
+/* ---------- stage 2: where — real terrain map ---------- */
+let NAME_MODE = 'medieval';
+function mapXY(lat, lon, W, H) {
+  const B = MAP_BOUNDS;
+  const x = (lon - B.left) / (B.right - B.left) * W;
+  const y = (B.top - lat) / (B.top - B.bottom) * H;
+  return { x, y };
+}
 function drawRegion() {
+  // Weighted by population weight of each medieval land.
   return weighted(REGIONS, (r) => r.weight);
 }
-function nearestPlace(px, py) {
-  let best = null, bestD = Infinity;
-  for (const r of REGIONS) {
-    for (const p of r.places) {
-      const d = (p.x - px) ** 2 + (p.y - py) ** 2;
-      if (d < bestD) { bestD = d; best = { place: p, region: r }; }
-    }
-  }
-  return best;
-}
-function settlementName(region, type) {
-  const pool = (type === 'village' || type === 'hamlet') ? region.villages.concat(region.towns) : region.towns;
-  return pick(pool);
+function placeName(place) {
+  return NAME_MODE === 'medieval' ? (place.medieval || place.name) : place.name;
 }
 function drawPopMap() {
   const svg = el('map-svg');
+  const W = 400, H = 400 * (MAP_BOUNDS.top - MAP_BOUNDS.bottom) / (MAP_BOUNDS.right - MAP_BOUNDS.left) * MAP_STRETCH;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H.toFixed(1)}`);
   if (!svg.dataset.drawn) {
     svg.dataset.drawn = '1';
-    let inner = `<rect x="0" y="0" width="400" height="300" fill="transparent" data-map-hit="1"/>`;
-    for (const r of REGIONS) {
-      inner += `<circle cx="${r.x}" cy="${r.y}" r="36" data-region="${r.id}" class="map-region"/>`;
+    const im = IMAGES.terrain;
+    let inner = `<image href="${im.src}" x="0" y="0" width="${W}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`;
+    for (const c of REGION_CENTROIDS) {
+      const { x, y } = mapXY(c.lat, c.lon, W, H);
+      inner += `<text x="${x}" y="${y}" text-anchor="middle" class="map-label">${c.name}</text>`;
     }
-    for (const r of REGIONS) {
-      inner += `<text x="${r.x}" y="${r.y + 4}" text-anchor="middle" class="map-label">${r.name}</text>`;
-      for (const p of r.places) {
-        inner += `<circle cx="${p.x}" cy="${p.y}" r="${p.kind === 'village' ? 2.2 : 3.4}" data-place="${p.name}" class="place-dot">`
-          + `<title>${p.name} — ${p.kind}</title></circle>`;
-      }
+    for (const p of PLACES) {
+      const { x, y } = mapXY(p.lat, p.lon, W, H);
+      inner += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${p.major ? 5 : 3.4}" data-place="${p.name}" class="place-dot${p.major ? '' : ' small'}">`
+        + `<title>${placeName(p)} — ${p.kind} (${p.name})</title></circle>`;
+      if (p.major) inner += `<text x="${(x + 6).toFixed(1)}" y="${(y - 5).toFixed(1)}" data-place-label="${p.name}" class="city-label">${placeName(p)}</text>`;
     }
+    inner += `<circle id="map-selected-dot" r="7" class="map-selected" visibility="hidden"/>`;
     inner += `<text id="map-selected-label" x="0" y="0" text-anchor="middle" class="place-label sel" visibility="hidden"></text>`;
-    inner += `<circle id="map-selected-dot" r="5" class="map-selected" visibility="hidden"/>`;
     svg.innerHTML = inner;
+    svg.querySelectorAll('.place-dot').forEach((dot) => {
+      dot.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const place = PLACES.find(x => x.name === dot.dataset.place);
+        if (place) selectPlace(place);
+      });
+      dot.setAttribute('tabindex', '0'); dot.setAttribute('role', 'button');
+      dot.setAttribute('aria-label', `${placeName(PLACES.find(x => x.name === dot.dataset.place))} (${dot.dataset.place})`);
+      dot.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); dot.click(); } });
+    });
+    svg.querySelectorAll('.city-label').forEach(label => label.setAttribute('visibility', 'visible'));
     svg.addEventListener('click', (e) => {
       const pt = svg.createSVGPoint();
       pt.x = e.clientX; pt.y = e.clientY;
       const ctm = svg.getScreenCTM();
       const loc = pt.matrixTransform(ctm.inverse());
-      const near = nearestPlace(loc.x, loc.y);
-      if (near) selectPlace(near.region.id, near.place.name);
+      const near = nearestPlace(loc.x, loc.y, W, H);
+      if (near) selectPlace(near);
     });
   }
-  markSelectedOnMap();
+  markSelectedOnMap(W, H);
 }
-function markSelectedOnMap() {
+function nearestPlace(px, py, W, H) {
+  let best = null, bestD = Infinity;
+  for (const p of PLACES) {
+    const { x, y } = mapXY(p.lat, p.lon, W, H);
+    const d = (x - px) ** 2 + (y - py) ** 2;
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
+}
+function markSelectedOnMap(W, H) {
   const dot = document.getElementById('map-selected-dot');
   const label = document.getElementById('map-selected-label');
   if (!dot || !drawn.place) return;
-  dot.setAttribute('cx', drawn.place.x); dot.setAttribute('cy', drawn.place.y);
+  const { x, y } = mapXY(drawn.place.lat, drawn.place.lon, W, H);
+  dot.setAttribute('cx', x.toFixed(1)); dot.setAttribute('cy', y.toFixed(1));
   dot.setAttribute('visibility', 'visible');
-  label.setAttribute('x', drawn.place.x); label.setAttribute('y', drawn.place.y - 8);
-  label.textContent = drawn.place.name;
+  label.setAttribute('x', x.toFixed(1)); label.setAttribute('y', (y - 9).toFixed(1));
+  label.textContent = placeName(drawn.place);
   label.setAttribute('visibility', 'visible');
 }
-function highlightRegion(regionId) {
-  document.querySelectorAll('#map-svg .map-region').forEach((c) => {
-    const on = c.dataset.region === regionId;
-    c.classList.toggle('map-active', on);
-    c.setAttribute('r', on ? 40 : 34);
-  });
-}
-function selectPlace(regionId, placeName) {
-  const region = REGIONS.find(r => r.id === regionId);
-  const place = region.places.find(p => p.name === placeName);
-  drawn.region = region.id;
+function selectPlace(place) {
   drawn.place = place;
+  drawn.region = place.region;
   drawPopMap();
-  highlightRegion(region.id);
-  el('where-result').textContent = `${place.name}, ${region.name}`;
+  const region = REGIONS.find(r => r.id === place.region);
+  el('where-result').textContent = `${placeName(place)}${NAME_MODE === 'medieval' && place.medieval && place.medieval !== place.name ? ` (today ${place.name})` : ''} — ${region.name}`;
   const kind = place.kind === 'fortress' ? 'a fortress town' : place.kind === 'mining' ? 'a mining town'
     : place.kind === 'monastery' ? 'a monastery village' : place.kind === 'market' ? 'a market town'
-    : place.kind === 'town' ? 'a town' : 'a village';
-  el('where-sub').textContent = `Closest place with data: ${kind}. ${region.hint[0].toUpperCase() + region.hint.slice(1)}.`;
+    : place.kind === 'border town' ? 'a border town (frontier)' : place.kind === 'town' ? 'a town' : 'a village';
+  el('where-sub').textContent = `${kind}. ${region.hint[0].toUpperCase() + region.hint.slice(1)}.`;
   el('where-select').hidden = true;
   el('where-again').hidden = false;
   el('where-next').hidden = false;
   setHash();
 }
+function setNameMode(mode) {
+  NAME_MODE = mode;
+  drawPopMap();
+  const svg = el('map-svg');
+  // refresh tooltips + selected label
+  svg.querySelectorAll('.place-dot').forEach(c => {
+    const p = PLACES.find(x => x.name === c.dataset.place);
+    if (p) c.querySelector('title').textContent = `${placeName(p)} — ${p.kind} (${p.name})`;
+  });
+  svg.querySelectorAll('.city-label').forEach(label => {
+    const p = PLACES.find(x => x.name === label.dataset.placeLabel);
+    if (p) label.textContent = placeName(p);
+  });
+  if (drawn.place) selectPlace(drawn.place);
+  el('toggle-modern').classList.toggle('is-on', mode === 'modern');
+  el('toggle-medieval').classList.toggle('is-on', mode === 'medieval');
+}
 function renderWhere() {
   drawPopMap();
-  el('where-src').innerHTML = 'Map is schematic — region positions and place dots are illustrative, not survey-accurate (estimate).';
+  el('region-choices').innerHTML = REGIONS.map(r => `<button type="button" class="toggle-btn" data-region="${r.id}">${r.name}</button>`).join('');
+  el('region-choices').querySelectorAll('[data-region]').forEach(btn => btn.addEventListener('click', () => {
+    const choices = PLACES.filter(p => p.region === btn.dataset.region);
+    const place = weighted(choices, p => p.major ? 3 : 1);
+    selectPlace(place);
+  }));
+  el('where-src').innerHTML = 'Terrain base: <a href="https://commons.wikimedia.org/wiki/File:Bosnia_and_Herzegovina_relief_location_map.svg" target="_blank" rel="noopener noreferrer">Wikimedia Commons relief map</a> (DzWiki & NordNordWest, CC BY-SA 3.0; not AI-generated). Historical place and region context: <a href="https://press.umich.edu/Books/T/The-Late-Medieval-Balkans" target="_blank" rel="noopener noreferrer">Fine, The Late Medieval Balkans</a> and <a href="https://nyupress.org/9780814755617/bosnia/" target="_blank" rel="noopener noreferrer">Malcolm, Bosnia: A Short History</a>. Settlement coordinates are approximate modern locations; historical region boundaries and labels are schematic.';
 }
 
 /* ---------- demographics summary (estimated from the life model) ---------- */
-const DEMO = (function computeDemo() {
-  const saved = RNG;
-  RNG = mulberry32(20260101);
-  const lives = [];
-  for (let i = 0; i < 4000; i++) {
-    const age = pickLifespan(1000, true);
-    lives.push(age);
-  }
+function lifeProfile(year) {
+  // Broad scenario ranges, not measured medieval-Bosnian vital statistics.
+  // Their variation is intentional and visible in the UI; evidence is sparse.
+  if (year < 900) return { childMortality: .40, annualAdultHazard: .020, births: 4.8, label: 'early medieval' };
+  if (year < 1200) return { childMortality: .36, annualAdultHazard: .018, births: 5.0, label: 'high medieval' };
+  if (year < 1349) return { childMortality: .34, annualAdultHazard: .017, births: 5.4, label: 'late medieval, pre-plague' };
+  if (year <= 1351) return { childMortality: .42, annualAdultHazard: .024, births: 5.1, label: 'Black Death years' };
+  if (year < 1463) return { childMortality: .38, annualAdultHazard: .020, births: 4.9, label: 'late medieval' };
+  return { childMortality: .36, annualAdultHazard: .019, births: 4.6, label: 'Ottoman-Hungarian frontier era' };
+}
+function drawSummary(year) {
+  const profile = lifeProfile(year), saved = RNG, rng = mulberry32(0xB05A + year);
+  RNG = rng;
+  const lives = Array.from({ length: 1600 }, () => pickLifespan(year));
   const mean = lives.reduce((a, b) => a + b, 0) / lives.length;
   const sorted = lives.slice().sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)];
-  const child = lives.filter(l => l < 5).length / lives.length;
   const paths = OCCUPATIONS.map(o => ({ label: o.label.replace(/^(a|an) /, ''), pct: o.weight * 100 }))
-    .sort((a, b) => b.pct - a.pct).slice(0, 6);
+    .sort((a, b) => b.pct - a.pct).slice(0, 5);
   RNG = saved;
-  return {
-    mean, median, child,
-    avgChildren: 3.6,
-    paths,
-  };
-})();
+  return { profile, mean, median: sorted[Math.floor(sorted.length / 2)], child: lives.filter(l => l < 5).length / lives.length, paths };
+}
 
 function renderDemoStats() {
-  const c = DEMO;
+  const c = drawSummary(drawn.year || YEAR_MIN);
   const top = c.paths.slice(0, 5);
   el('demo-stats').innerHTML = [
-    ['Mean life expectancy', `${Math.round(c.mean)} years (est.)`],
+    ['Mean lifespan', `${Math.round(c.mean)} years (est.)`],
     ['Median lifespan', `${Math.round(c.median)} years (est.)`],
     ['Childhood mortality', `${Math.round(c.child * 100)}% die before age 5 (est.)`],
-    ['Children per woman', `${c.avgChildren} (est.)`],
+    ['Children per household', `about ${c.profile.births.toFixed(1)} (est.)`],
+    ['Period model', c.profile.label],
     ['Typical life paths', top.map(t => `${t.label} ${Math.round(t.pct)}%`).join(' · ')],
-    ['Leading causes of death', 'childhood illness · childbirth · war · plague (est.)'],
+    ['Possible hazards', c.profile.label === 'Black Death years' ? 'plague · childhood illness · childbirth · accident (est.)' : 'childhood illness · childbirth · accident · conflict (est.)'],
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
 }
 
@@ -279,7 +345,9 @@ function pickName(sex, occ) {
   return pick(pool);
 }
 function pickReligion(year, regionId) {
+  if (year < 1100) return { id: 'unknown', weight: 1, label: 'not specified — evidence is too sparse for this modeled life' };
   let items = RELIGIONS.slice();
+  if (year < 1203) items = items.filter(r => r.id !== 'krstjanin');
   if (regionId === 'podrinje' || regionId === 'soli' || regionId === 'hum') {
     items = items.map(r => r.id === 'orthodox' ? { ...r, weight: r.weight * 2.2 } : r);
   }
@@ -297,27 +365,31 @@ function pickReligion(year, regionId) {
   }
   return weighted(items, (i) => i.weight);
 }
-function pickOccupation(nobleOnly) {
+function pickOccupation(nobleOnly, year) {
+  const available = OCCUPATIONS.filter(o => !(year < 1203 && o.id === 'krstjanin'));
   if (nobleOnly) {
-    return weighted(OCCUPATIONS.filter(o => o.noble), (o) => o.weight);
+    return weighted(available.filter(o => o.noble), (o) => o.weight);
   }
-  return weighted(OCCUPATIONS, (o) => o.weight);
+  return weighted(available, (o) => o.weight);
 }
-function pickLifespan(year, forDemo) {
-  if (rand() < 0.3) return Math.floor(rand() * 5);
+function pickLifespan(year) {
+  const profile = lifeProfile(year);
+  if (rand() < profile.childMortality) return Math.floor(rand() * 5);
   let age = 5;
-  while (age < 80) {
-    const rate = age < 45 ? 0.012 : age < 60 ? 0.035 : 0.09;
+  while (age < 100) {
+    const rate = age < 45 ? profile.annualAdultHazard : age < 60 ? profile.annualAdultHazard * 2.7 : age < 75 ? profile.annualAdultHazard * 5 : .15;
     if (rand() < rate) break;
     age++;
   }
   return age;
 }
 function rulerAt(year) {
+  if (year > 1527) return { from: 1528, to: year, name: 'beyond this model’s historical window', title: 'not modeled', note: 'this person outlived the game’s 1527 birth-year boundary; later political context is not modeled' };
   for (const r of RULERS) if (year >= r.from && year <= r.to) return r;
   return RULERS[RULERS.length - 1];
 }
 function lordAt(regionId, year) {
+  if (year > 1463) return { from: 1464, to: 1527, house: 'regional rule not modeled here', note: 'after the 1463 conquest, detailed local lordship is outside this life model' };
   const region = REGIONS.find(r => r.id === regionId);
   for (const l of region.lords) if (year >= l.from && year <= l.to) return l;
   return region.lords[region.lords.length - 1];
@@ -331,10 +403,12 @@ function reignsOver(birth, death) {
 }
 function lordSpansOver(regionId, birth, death) {
   const region = REGIONS.find(r => r.id === regionId);
-  return region.lords.filter(l => l.to >= birth && l.from <= death).map(l => {
-    const from = Math.max(l.from, birth), to = Math.min(l.to, death);
+  const list = region.lords.filter(l => l.to >= birth && l.from <= Math.min(death, 1463)).map(l => {
+    const from = Math.max(l.from, birth), to = Math.min(l.to, death, 1463);
     return `${l.house} — ${from}–${to}`;
   });
+  if (death > 1463) list.push('local lordship after 1463 not modeled');
+  return list;
 }
 function eventsIn(birth, death, regionId, occId) {
   const list = EVENTS.filter(e =>
@@ -370,13 +444,17 @@ function drawLife() {
   const year = drawn.year;
   const region = REGIONS.find(r => r.id === drawn.region);
   const nobleOnly = el('noble-only').checked;
-  const occ = pickOccupation(nobleOnly);
+  const occ = pickOccupation(nobleOnly, year);
   const sex = rand() < 0.5 ? 'female' : 'male';
   const name = pickName(sex, occ);
-  const religion = pickReligion(year, region.id);
+  const religion = occ.id === 'krstjanin'
+    ? RELIGIONS.find(r => r.id === 'krstjanin')
+    : pickReligion(year, region.id);
   const lifespan = pickLifespan(year);
-  const deathYear = Math.min(1463, year + lifespan);
-  const place = drawn.place || { name: settlementName(region, 'town'), kind: 'town' };
+  const deathYear = year + lifespan;
+  const householdChildren = lifespan >= 16
+    ? Math.max(0, Math.min(10, Math.round(lifeProfile(year).births + (rand() - .5) * 4))) : 0;
+  const place = drawn.place || weighted(PLACES.filter(p => p.region === region.id), p => p.major ? 3 : 1);
   const typeLabel = place.kind === 'fortress' ? 'a fortress town' : place.kind === 'mining' ? 'a mining town'
     : place.kind === 'monastery' ? 'a monastery village' : place.kind === 'market' ? 'a market town'
     : place.kind === 'town' ? 'a town' : 'a village';
@@ -388,7 +466,7 @@ function drawLife() {
     settlement: place.name, settlementType: typeLabel,
     ruler: rulerAt(year), lord: lordAt(region.id, year),
     events: eventsIn(year, deathYear, region.id, occ.id),
-    family: buildFamily({ year, sex, deathYear }),
+    family: buildFamily({ year, sex, deathYear }), householdChildren,
     reigns: reignsOver(year, deathYear),
     lordSpans: lordSpansOver(region.id, year, deathYear),
     nobleOnly,
@@ -397,7 +475,7 @@ function drawLife() {
 
 function renderLife() {
   renderDemoStats();
-  el('life-src').innerHTML = 'All summary figures are model-based estimates calibrated on the historical literature — see <a href="#" onclick="showAbout();return false;">About</a>.';
+  el('life-src').innerHTML = 'Demographic values are explicit scenario assumptions, not measured Bosnian statistics; they vary by broad period and are not calibrated to a surviving census. See <a href="#" onclick="showAbout();return false;">sources and method</a>.';
   if (!drawn.life) {
     el('life-card').hidden = true;
     el('generate').hidden = false;
@@ -419,7 +497,7 @@ function renderLifeCard() {
   el('life-stats').innerHTML = [
     ['Born', `${p.year} in ${p.settlement}`],
     ['Region', REGIONS.find(r => r.id === p.region).name],
-    ['Sex', p.sex === 'female' ? 'female — she' : 'male — he'],
+    ['Biological sex', p.sex],
     ['Faith', p.religion.label],
     ['Ruled by (at birth)', `${p.ruler.name} (${p.ruler.from}–${p.ruler.to})`],
     ['Under (at birth)', `${p.lord.house} (${p.lord.from}–${p.lord.to})`],
@@ -428,15 +506,16 @@ function renderLifeCard() {
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
   const svg = el('tl-svg');
   const W = 360, H = 84, y = H - 18;
-  const x = (yr) => 12 + (yr - 600) / 863 * (W - 24);
+  const lifeSpan = Math.max(1, p.deathYear - p.year);
+  const x = (yr) => 12 + (Math.max(p.year, Math.min(p.deathYear, yr)) - p.year) / lifeSpan * (W - 24);
   const marks = p.events.map((e) => `<circle cx="${x(e.at)}" cy="${y}" r="3" fill="var(--accent)"/>`).join('');
   svg.innerHTML = `
     <line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="var(--border)"/>
     <circle cx="${x(p.year)}" cy="${y}" r="5" fill="var(--accent)" opacity="0.8"/>
     <circle cx="${x(p.deathYear)}" cy="${y}" r="5" fill="var(--danger)" opacity="0.8"/>
     ${marks}
-    <text x="12" y="${H - 4}" font-size="10" fill="var(--muted)">600</text>
-    <text x="${W - 12}" y="${H - 4}" text-anchor="end" font-size="10" fill="var(--muted)">1463</text>`;
+    <text x="12" y="${H - 4}" font-size="10" fill="var(--muted)">${p.year}</text>
+    <text x="${W - 12}" y="${H - 4}" text-anchor="end" font-size="10" fill="var(--muted)">${p.deathYear}</text>`;
   el('life-hint').textContent = p.events.length
     ? `${p.events.length} major event${p.events.length > 1 ? 's' : ''} touched this life.`
     : 'A quiet life, by the look of it.';
@@ -479,7 +558,7 @@ function familyEvents(life) {
     }
     const died = Math.min(f.died, life.deathYear);
     if (died > life.year && died <= life.deathYear && died > f.born) {
-      const cause = died >= 1349 && died <= 1351 ? ' The plague took the house.' : died >= 1463 ? ' The conquest of that year ended the family line.' : (f.relation === 'mother' ? ' Of fever.' : '');
+      const cause = died >= 1349 && died <= 1351 ? ' In this generated family story, the plague is imagined as the cause.' : '';
       evs.push({ year: died, kind: 'family', text: `${f.relation[0].toUpperCase() + f.relation.slice(1)} ${f.name} died in ${died}.${cause}` });
     }
   }
@@ -490,22 +569,28 @@ function imgFigure(key, caption, source) {
   const im = IMAGES[key];
   if (!im) return '';
   return `<figure class="story-img"><img src="${im.src}" alt="${caption}"/>`
-    + `<figcaption>${caption}<br><a href="${im.page}" target="_blank" rel="noopener noreferrer">Photo: Wikimedia Commons</a> · ${im.artist || 'unknown'} · ${im.license || ''}${source ? ' · ' + source : ''}</figcaption></figure>`;
+    + `<figcaption>${caption}<br><a href="${im.page}" target="_blank" rel="noopener noreferrer">${im.title || 'Image source'}</a> · ${im.artist || 'unknown'} · ${im.license || ''}${source ? ' · ' + source : ''}${im.ai ? ' · AI-generated' : ' · not AI-generated'}</figcaption></figure>`;
 }
 
 function cultureParagraph(life) {
   const c = CULTURE;
   const bits = [];
-  const customs = [pick(c.customs), pick(c.customs.filter(x => x !== null))];
-  bits.push(`${pronounify(pick(c.customs).text, life.sex)} ${srcTag(pick(c.customs).src, pick(c.customs).estimate)}`);
-  bits.push(`${pronounify(pick(c.food).text, life.sex)} ${srcTag(pick(c.food).src, pick(c.food).estimate)}`);
-  bits.push(`${pronounify(pick(c.clothing).text, life.sex)} ${srcTag(pick(c.clothing).src, pick(c.clothing).estimate)}`);
-  bits.push(`${pronounify(pick(c.songs).text, life.sex)} ${srcTag(pick(c.songs).src, pick(c.songs).estimate)}`);
-  bits.push(`${pronounify(pick(c.appearance).text, life.sex)} ${srcTag(pick(c.appearance).src, pick(c.appearance).estimate)} <b>Appearance is a reconstruction (estimate), not a portrait.</b>`);
+  const customs = c.customs.filter(item => {
+    if (item.text.startsWith('A slava')) return life.religion.id === 'orthodox' && life.year >= 1200;
+    if (item.text.startsWith('The krstjani')) return life.religion.id === 'krstjanin' && life.year >= 1203;
+    if (item.text.startsWith('The dead were buried under a stećak')) return life.year >= 1100;
+    return true;
+  });
+  for (const group of [customs, c.food, c.clothing, c.songs, c.appearance]) {
+    const item = pick(group);
+    bits.push(`${pronounify(item.text, life.sex)} ${srcTag(item.src, item.estimate)}`);
+  }
+  bits.push('<b>Appearance is a reconstruction, not a portrait of this fictional person.</b>');
   return bits;
 }
 
 function lifeStory(life) {
+  ACTIVE_SOURCES = new Set();
   const p = life;
   const regionObj = REGIONS.find(r => r.id === p.region);
   const personal = personalEvents(p);
@@ -534,10 +619,19 @@ function lifeStory(life) {
     .filter(h => RELEVANT.has(h.kind) === false);
   const otherList = hist.filter(h => !RELEVANT.has(h.kind));
 
-  const opening = `${p.name} was born in ${p.year} in ${p.settlement}, ${p.settlementType} in ${regionObj.name} — ${regionObj.hint}. ${His} family were ${p.occ.label.replace(/^a /, '')}s by trade.`;
+  const householdLine = p.occ.noble
+    ? `The family belonged to ${p.occ.id === 'vlastelic' ? 'the petty nobility (vlasteličići)' : 'the landed nobility'}.`
+    : p.occ.id === 'krstjanin'
+      ? 'The household belonged to the krstjani of the Bosnian Church.'
+      : p.occ.id === 'roblje'
+        ? 'The household was caught up in the slave trade to the coast.'
+        : `The household's livelihood centered on ${{kmet: 'smallholder farming', pastir: 'herding', rudar: 'mining', trgovac: 'trade', vojnik: 'military service', svecenik: 'priestly service', domazet: 'hired labor', pisar: 'scribal work'}[p.occ.id] || 'work'}.`;
+  const opening = `${p.name} was born in ${p.year} in ${p.settlement}, ${p.settlementType} in ${regionObj.name} — ${regionObj.hint}. ${householdLine}`;
   const house = `The land ${he} lived on belonged to ${p.lord.house} (${p.lord.from}–${p.lord.to}); ${pronounify(p.lord.note, p.sex)}.`;
   const crown = `The ruler of the day was ${birthRuler.name} (${birthRuler.from}–${birthRuler.to}). ${pronounify(birthRuler.note, p.sex)}.`;
-  const faith = `${pronounify(`They were ${p.religion.label}`, p.sex)}${p.religion.id === 'krstjanin' ? ' — one of the Bosnian Christians the rest of Europe called heretics' : ''}. ${srcTag(p.religion.id === 'krstjanin' ? 'church' : 'fine', false)}`;
+  const faith = p.religion.id === 'unknown'
+    ? `The surviving evidence is too sparse to assign ${his} household a religious affiliation with confidence. ${srcTag('fine-early', false)}`
+    : `${pronounify(`They were ${p.religion.label}`, p.sex)}${p.religion.id === 'krstjanin' ? ' — one of the Bosnian Christians the rest of Europe called heretics' : ''}. ${srcTag(p.religion.id === 'krstjanin' ? 'church' : 'fine', false)}`;
 
   const pieces = [`<p>${opening}</p>`, `<p>${house}</p>`, `<p>${crown}</p>`, `<p>${faith}</p>`];
 
@@ -548,10 +642,13 @@ function lifeStory(life) {
     const wk = OCCUPATION_DETAIL[p.occ.id];
     if (wk) pieces.push(`<p>${pronounify(wk, p.sex)}</p>`);
   }
+  const weaveEvents = (events) => {
+    if (!events.length) return '';
+    const chosen = events.slice(0, 4);
+    return chosen.map(e => `${pronounify(e.text, p.sex)} (${e.year})${e.src && e.historical ? ' ' + srcTag(e.src, false) : ''}`).join(' ');
+  };
   if (childhood.length) {
-    for (const e of childhood) {
-      pieces.push(`<p>${pronounify(e.text, p.sex)} (${e.year})${e.src && e.historical ? ' ' + srcTag(e.src, false) : ''}</p>`);
-    }
+    pieces.push(`<p>${weaveEvents(childhood)}</p>`);
   } else {
     pieces.push(`<p>Nothing out of the ordinary marked the first years — by the standards of the time, that was luck.</p>`);
   }
@@ -559,12 +656,14 @@ function lifeStory(life) {
   if (!p.child) {
     pieces.push(`<h3>Adulthood</h3>`);
     if (adulthood.length) {
-      for (const e of adulthood) {
-        pieces.push(`<p>${pronounify(e.text, p.sex)} (${e.year})${e.src && e.historical ? ' ' + srcTag(e.src, false) : ''}</p>`);
-      }
+      pieces.push(`<p>${weaveEvents(adulthood)}</p>`);
     } else {
       pieces.push(`<p>The adult years passed in work, weddings and the slow turn of seasons; no great event crossed ${his} road.</p>`);
     }
+  }
+
+  if (p.householdChildren) {
+    pieces.push(`<p>As an adult, the household is modeled with ${p.householdChildren} children. This is a broad period-based estimate, not a record of a real family.</p>`);
   }
 
   if (ageAt(p.deathYear) >= 60) {
@@ -576,8 +675,8 @@ function lifeStory(life) {
   }
 
   if (otherList.length) {
-    pieces.push(`<h3>Other major events during ${his} lifetime</h3>`);
-    pieces.push(`<ul class="src-list">${otherList.map(e => `<li>${e.text} (${e.at})</li>`).join('')}</ul>`);
+    pieces.push(`<h3>Beyond the central story</h3>`);
+    pieces.push(`<p>${weaveEvents(otherList.map(e => ({ ...e, year: e.at, historical: true, src: e.src || 'fine' })))}</p>`);
   }
 
   // Everyday life: customs, food, clothing, song, appearance — with a photo
@@ -585,7 +684,7 @@ function lifeStory(life) {
   const culture = cultureParagraph(p);
   pieces.push(`<h3>Everyday life</h3>`);
   pieces.push(`<p>${culture.join(' ')}</p>`);
-  pieces.push(imgFigure('stecci', 'A necropolis of stećci — the carved stone tombs of the Bosnian highlands, the same burial custom the story mentions.', 'burial custom: Fine, Late Medieval Balkans'));
+  if (p.deathYear >= 1200) pieces.push(imgFigure('stecci', 'A Bosnian necropolis of stećci. This later medieval burial tradition is not assigned to the fictional person.', 'Fine, Late Medieval Balkans'));
 
   // Where they lived, then and now.
   const site = SITE_IMAGES[p.region] || SITE_IMAGES.stecci;
@@ -593,24 +692,55 @@ function lifeStory(life) {
   pieces.push(`<p>${site.then} (${regionObj.name}). ${site.now}</p>`);
   pieces.push(imgFigure(site.img, site.then, 'present-day photo of the same site'));
 
+  pieces.push('<h3>People, objects and symbols in the historical record</h3>');
+  pieces.push('<p>No surviving portrait is identified as this randomly generated person. The following are reference images of real period sources or objects, not possessions of the fictional character; every image is individually credited and marked as not AI-generated.</p>');
+  if (p.deathYear >= 1404) {
+    pieces.push(imgFigure('manuscript', 'Religious imagery in Hval’s 1404 Bosnian Church manuscript, with a human figure: a source-era reference, not a portrait or universal costume reference.', 'Hval manuscript, written for Duke Hrvoje Vukčić Hrvatinić'));
+    ACTIVE_SOURCES.add('hval-manuscript');
+    ACTIVE_SOURCES.add('hval-context');
+  }
+  if ((p.occ.id === 'vojnik' || p.occ.noble) && p.year >= 1200) {
+    pieces.push(imgFigure('sword', 'A medieval Bosnian sword displayed at Museum Semberija. It is a representative weapon reference, not an item attributed to this person.', 'Wikimedia Commons, CC BY-SA 4.0'));
+    ACTIVE_SOURCES.add('sword-object');
+  }
+  if (p.deathYear >= 1250) {
+    pieces.push(imgFigure('dobojFind', 'An inscribed stećak from the Doboj region, tentatively dated to the late 13th or early 14th century; the damaged inscription mentions a scribe of Prince Hrvatin.', 'Doboj Museum medieval collection; not this family’s grave'));
+    ACTIVE_SOURCES.add('doboj-find');
+  }
+  if (p.year >= 1330 && p.year <= 1463) {
+    const s = SOURCES.find(x => x.key === 'museum-ring');
+    pieces.push(`<p><b>Ornaments:</b> the museum documents a gold signet ring attributed to Tripa Buća, an official of King Tvrtko I. <a href="${s.url}" target="_blank" rel="noopener noreferrer">View the museum’s artifact record and photograph</a>. This elite object is not presented as belonging to the generated person.</p>`);
+    ACTIVE_SOURCES.add('museum-ring');
+  }
+  if (p.year >= 1250 && p.year <= 1463 && /Kotromanić/i.test(p.lord.house)) {
+    pieces.push(imgFigure('kotromanicArms', 'Kotromanić arms as reproduced in a later armorial source. This is a later depiction, not a surviving contemporary shield.', 'Stanislaus Rubcich armorial tradition; CC BY-SA 4.0'));
+    ACTIVE_SOURCES.add('kotromanic-arms');
+  } else if (/Kosače/i.test(p.lord.house)) {
+    pieces.push(`<p><b>House arms:</b> the selected local lord is ${p.lord.house}. No verified image for this specific lineage is included here; the app deliberately does not invent a coat of arms.</p>`);
+  }
+
   // How it ended.
   let end;
   if (p.lifespan < 6) {
     end = `${p.name} died in ${p.deathYear}, aged ${p.lifespan || 'a few months'}. ${deathCause(p)}`;
   } else {
-    end = `${p.name} died in ${p.deathYear}, aged ${p.lifespan}. ${deathCause(p)} ${rulerAt(p.deathYear).name} held the throne at the end${p.deathYear >= 1463 ? ', though the throne itself had gone' : ''}.`;
+    end = `${p.name} died in ${p.deathYear}, aged ${p.lifespan}. ${deathCause(p)} The political context near the end was ${rulerAt(p.deathYear).name}.`;
   }
   pieces.push(`<p>${pronounify(end, p.sex)}</p>`);
 
   // Sources used in this life.
-  const used = new Set();
-  for (const key of ['fine', 'malcolm', 'cirkovic', 'church']) used.add(key);
+  const used = ACTIVE_SOURCES;
+  used.add(p.year < 1154 ? 'fine-early' : 'fine');
+  used.add('malcolm');
+  if (p.year <= 1189 && p.deathYear >= 1189) used.add('kulin');
+  if (p.year < 900) used.add('slavic-sites');
+  if (p.year >= 1463) { used.add('jajce-unesco'); used.add('relations'); }
   const srcList = [...used].map(k => {
     const s = SOURCES.find(x => x.key === k);
-    return `<li>${s.label}</li>`;
+    return `<li>${s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.label}</a>` : s.label}</li>`;
   }).join('');
   pieces.push(`<h3>Sources for this life</h3><ul class="src-list">${srcList}</ul>`);
-  pieces.push(`<p class="fine-print">Everything marked “est.” is a model-based estimate or a reconstruction, not a recorded fact. No image in this story is AI-generated; all photos are Wikimedia Commons, credited above.</p>`);
+  pieces.push(`<p class="fine-print">This is procedurally generated fiction, not a real person or a biography written by generative AI. Historical facts are cited; demographic figures and reconstructed details are model estimates. Photographs are historical/current reference images credited individually; no image shown here is AI-generated.</p>`);
 
   return pieces.join('\n');
 }
@@ -620,7 +750,7 @@ function renderStory() {
   el('life-name').textContent = p.child
     ? `${p.name}, ${p.titleOcc}, died at ${p.lifespan}, ${p.year}–${p.deathYear}`
     : `${p.name}, ${p.titleOcc}, lived ${p.lifespan} years, ${p.year}–${p.deathYear}`;
-  el('stats-label').textContent = 'This life is AI-generated fiction, not a real person. Everything around it — rulers, wars, plagues, customs — is real and sourced; anything estimated is marked “est.”';
+  el('stats-label').textContent = 'This is procedurally generated fiction, not a real person. The game does not use generative AI to write this biography. Historical claims are linked; estimates and representative imagery are labeled.';
   el('life-story').innerHTML = lifeStory(p);
   el('life-stats2').innerHTML = [
     ['Born', p.year],
@@ -634,13 +764,13 @@ function renderStory() {
 function renderAbout() {
   const imgCredits = Object.entries(IMAGES).map(([k, im]) =>
     `<li><a href="${im.page}" target="_blank" rel="noopener noreferrer">${im.title}</a> — ${im.artist || 'unknown'} — ${im.license}</li>`).join('');
-  const srcList = SOURCES.map(s => `<li>${s.label}</li>`).join('');
+  const srcList = SOURCES.map(s => `<li>${s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.label}</a>` : s.label}</li>`).join('');
   el('about-body').innerHTML = `
-    <p>This is a lightweight copy of <a href="https://anyhumanever.com/" target="_blank" rel="noopener noreferrer">Any Human Ever</a>, focused on people living in medieval Bosnia, from the Slavic settlement (6th–7th century) to the fall of the Kingdom of Bosnia in 1463.</p>
+    <p>This is a lightweight copy of <a href="https://anyhumanever.com/" target="_blank" rel="noopener noreferrer">Any Human Ever</a>, focused on births from early Slavic settlement (about 600) through the Ottoman conquest of Jajce in 1527, the end of the Jajce Banate. The Kingdom of Bosnia fell in 1463; Jajce remained under Hungarian rule from 1464 to 1527.</p>
     <p><b>What is real:</b> the rulers, noble houses, wars, plagues, treaties and religious events are drawn from the historical scholarship listed below.</p>
-    <p><b>What is estimated:</b> the population curve, every summary statistic (life expectancy, childhood mortality, children per woman, life paths, causes of death) and the everyday-life details marked “est.” are model-based estimates or reconstructions. The map is schematic.</p>
-    <p><b>What is invented:</b> the individual lives, their names, families and “famous for” lines are narrative fiction, not records.</p>
-    <p><b>Images:</b> no image in this app is AI-generated. All photos are from Wikimedia Commons, credited below and at the point of use.</p>
+    <p><b>What is estimated:</b> the population curve, lifespan/mortality/fertility ranges, occupation odds, and everyday-life details are scenario assumptions, not Bosnian census or family records. Numeric demographic parameters are not directly attested for medieval Bosnia; they vary by broad period and are not precision demographic history. The map shows modern terrain, approximate settlement coordinates, and schematic historical regions.</p>
+    <p><b>What is invented:</b> individual names, households, life events and biographies are procedurally generated fiction, not archival records. Names are drawn from late-medieval name pools, so early-period names are only literary approximations. The game uses no generative AI to write the person’s life or generate its images.</p>
+    <p><b>Images:</b> photos and map are source images credited individually and below; image artwork is not AI-generated. Reconstructed heraldry is labeled as a modern reconstruction, not an authenticated medieval object.</p>
     <h3>Sources</h3><ul class="src-list">${srcList}</ul>
     <h3>Image credits</h3><ul class="src-list">${imgCredits}</ul>`;
 }
@@ -661,8 +791,9 @@ function playFromHero() {
   drawWhenStage();
   setHash();
 }
-function drawWhenStage() {
-  drawn.year = drawYear();
+function drawWhenStage(year = null) {
+  drawn.year = year == null ? drawYear() : Math.max(YEAR_MIN, Math.min(YEAR_MAX, Math.round(year)));
+  setSelectedYear(drawn.year);
   el('when-result').textContent = `Year ${drawn.year}`;
   el('when-sub').textContent = `Roughly ${Math.round(popAt(drawn.year) / 1000)}k people in Bosnia at that time (estimate).`;
   el('when-select').hidden = true;
@@ -672,8 +803,9 @@ function drawWhenStage() {
 }
 function drawWhereStage() {
   const region = drawRegion();
-  const place = pick(region.places);
-  selectPlace(region.id, place.name);
+  const choices = PLACES.filter(p => p.region === region.id);
+  const place = weighted(choices, p => p.major ? 3 : 1);
+  selectPlace(place);
 }
 function generateLifeStage() {
   drawn.life = drawLife();
@@ -691,7 +823,12 @@ function drawStoryStage() {
 el('draw').addEventListener('click', playFromHero);
 el('when-select').addEventListener('click', drawWhenStage);
 el('when-again').addEventListener('click', drawWhenStage);
-el('when-next').addEventListener('click', () => { played.add('where'); showStage('where'); drawWhereStage(); });
+el('year-range').addEventListener('input', (e) => setSelectedYear(e.target.value));
+el('year-number').addEventListener('change', (e) => { if (e.target.value) setSelectedYear(e.target.value); });
+el('use-year').addEventListener('click', () => { const n = Number(el('year-number').value); if (Number.isFinite(n) && n >= YEAR_MIN && n <= YEAR_MAX) drawWhenStage(n); });
+el('toggle-medieval').addEventListener('click', () => setNameMode('medieval'));
+el('toggle-modern').addEventListener('click', () => setNameMode('modern'));
+el('when-next').addEventListener('click', () => { played.add('where'); showStage('where'); renderWhere(); drawWhereStage(); });
 el('where-select').addEventListener('click', drawWhereStage);
 el('where-again').addEventListener('click', drawWhereStage);
 el('where-next').addEventListener('click', () => { played.add('life'); showStage('life'); drawn.life = null; renderLife(); });
